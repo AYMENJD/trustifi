@@ -1,0 +1,4 @@
+include MANIFEST.in README.md LICENSE trustifi/cacert.pem trustifi/py.typed
+
+exclude .github/
+recursive-exclude .github
