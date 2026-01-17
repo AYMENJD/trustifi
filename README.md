@@ -1,8 +1,9 @@
-# trustifi: Google-trusted Root CA Certificates for Python
+# trustifi: Google-trusted Root CA Certificates
 
 trustifi provides **Google-trusted Root CA certificates** for TLS verification.
-It is intended as a **drop-in replacement for [certifi](https://pypi.org/project/certifi)**, using Google’s trust
-program and policies instead of Mozilla’s.
+It is intended as a **drop-in replacement for [certifi](https://pypi.org/project/certifi)**, using Google’s **TLS-only** trust model instead of Mozilla’s **general-purpose** root store.
+
+It is currently used by [**RedC**](https://github.com/AYMENJD/redc).
 
 ## Installation
 
