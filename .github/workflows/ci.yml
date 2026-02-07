@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     env:
       TRUSTIFI_UPDATED: "0"
     steps:
