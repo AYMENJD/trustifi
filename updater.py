@@ -2,11 +2,13 @@ import base64
 import os
 import re
 import subprocess
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from trustifi import __version__
 
-API_URL = "https://chromium.googlesource.com/chromium/src/+/refs/heads/main/{path}?format=TEXT"
+API_URL = "https://api.github.com/repos/chromium/chromium/contents/{path}?ref=main"
+
 TEXTPROTO_PATH = "net/data/ssl/chrome_root_store/root_store.textproto"
 CERTS_PATH = "net/data/ssl/chrome_root_store/root_store.certs"
 
@@ -18,11 +20,35 @@ def run(cmd: list[str]) -> None:
     subprocess.run(cmd, check=True, timeout=30)
 
 
-def get_file(path: str) -> str:
+def github_request(path: str) -> bytes:
     path = path.lstrip("/")
-    req = Request(API_URL.format(path=path))
-    with urlopen(req, timeout=30) as r:
-        return base64.b64decode(r.read()).decode("utf-8")
+    url = API_URL.format(path=path)
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+    }
+
+    token = os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    req = Request(url, headers=headers)
+
+    try:
+        with urlopen(req, timeout=30) as r:
+            import json
+
+            data = json.loads(r.read().decode("utf-8"))
+            if data.get("encoding") != "base64":
+                raise ValueError("Unexpected encoding from GitHub API")
+
+            return base64.b64decode(data["content"])
+    except HTTPError as e:
+        raise RuntimeError(f"GitHub API request failed: {e}") from e
+
+
+def get_file(path: str) -> str:
+    return github_request(path).decode("utf-8")
 
 
 def extract_version(text: str) -> str:
@@ -92,9 +118,10 @@ def git_commit_and_tag(version: str) -> None:
 def test_cacert() -> None:
     print("Testing cacert.pem...\n")
 
-    from trustifi import where, contents
-    import ssl
     import socket
+    import ssl
+
+    from trustifi import contents, where
 
     assert "-----BEGIN CERTIFICATE-----" in contents(), "cacert.pem seems invalid"
 
